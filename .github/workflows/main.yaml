@@ -8,8 +8,8 @@ on:
 
 jobs:
   podman-compose:
-    # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+   
 
     steps:
       # Step 1: Checkout the repository
@@ -57,10 +57,10 @@ jobs:
           podman ps
 
       # # Step 7: Stop and clean up containers
-      # - name: Stop Podman Compose
-      #   if: always()
-      #   working-directory: demo
-      #   run: |
-      #     echo "🧹 Cleaning up containers..."
-      #     podman-compose -f docker-compose.yaml down
-      #     echo "✅ Cleanup completed."
+      - name: Stop Podman Compose
+        if: always()
+        working-directory: demo
+        run: |
+          echo "🧹 Cleaning up containers..."
+          podman-compose -f docker-compose.yaml down
+          echo "✅ Cleanup completed."
