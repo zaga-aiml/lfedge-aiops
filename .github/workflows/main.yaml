@@ -1,0 +1,39 @@
+name: Run Podman Compose
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  podman-compose:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Install Podman and podman-compose
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman podman-compose
+
+      # Step 3: Verify Podman installation
+      - name: Verify Podman
+        run: |
+          podman --version
+          podman-compose --version
+
+      # Step 4: Run Podman Compose
+      - name: Run Podman Compose
+        run: |
+          podman-compose up -d
+          podman ps
+
+      # Step 5 (Optional): Stop containers
+      - name: Stop Podman Compose
+        if: always()
+        run: podman-compose down
