@@ -1,4 +1,4 @@
-name: Run Podman Compose
+name: Run Podman Compose (Build & Deploy)
 
 on:
   push:
@@ -22,18 +22,33 @@ jobs:
           sudo apt-get install -y podman podman-compose
 
       # Step 3: Verify Podman installation
-      - name: Verify Podman
+      - name: Verify Podman installation
         run: |
           podman --version
           podman-compose --version
 
-      # Step 4: Run Podman Compose
-      - name: Run Podman Compose
+      # Step 4: Build images before running
+      - name: Build Podman images
+        working-directory: demo
         run: |
-          podman-compose up -d
+          echo "🔧 Building container images..."
+          podman-compose -f docker-compose.yaml build
+          echo "✅ Build completed."
+
+      # Step 5: Run containers
+      - name: Run Podman Compose
+        working-directory: demo
+        run: |
+          echo "🚀 Starting containers..."
+          podman-compose -f docker-compose.yaml up -d
+          echo "✅ Containers started."
           podman ps
 
-      # Step 5 (Optional): Stop containers
+      # Step 6: Stop and clean up containers
       - name: Stop Podman Compose
         if: always()
-        run: podman-compose down
+        working-directory: demo
+        run: |
+          echo "🧹 Cleaning up containers..."
+          podman-compose -f docker-compose.yaml down
+          echo "✅ Cleanup completed."
