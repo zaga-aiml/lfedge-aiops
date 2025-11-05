@@ -8,8 +8,9 @@ on:
 
 jobs:
   podman-compose:
+    # ⚙️ Use self-hosted runner if you want to connect to your local Podman
+    # runs-on: self-hosted
     runs-on: ubuntu-latest
-   
 
     steps:
       # Step 1: Checkout the repository
@@ -17,14 +18,16 @@ jobs:
         uses: actions/checkout@v4
 
       # Step 2: Install Podman and podman-compose
-      - name: Install Podman
+      - name: Install Podman and podman-compose
         run: |
-          sudo apt-get update
-          sudo apt-get install -y podman podman-compose
+          sudo apt-get update -y
+          sudo apt-get install -y podman python3-pip
+          pip install podman-compose
 
-      # Step 3: Verify Podman installation
+      # Step 3: Verify installation
       - name: Verify Podman installation
         run: |
+          echo "🔍 Checking Podman versions..."
           podman --version
           podman-compose --version
 
@@ -45,7 +48,7 @@ jobs:
         run: |
           echo "🔧 Building container images..."
           podman-compose -f docker-compose.yaml build
-          echo "✅ Build completed."
+          echo "✅ Build completed successfully."
 
       # Step 6: Run containers
       - name: Run Podman Compose
@@ -54,10 +57,19 @@ jobs:
           echo "🚀 Starting containers..."
           podman-compose -f docker-compose.yaml up -d
           echo "✅ Containers started."
+          echo "📋 Listing running containers..."
           podman ps
 
-      # # Step 7: Stop and clean up containers
-      - name: Stop Podman Compose
+      # Step 7: Verify network and containers
+      - name: Verify Podman environment
+        run: |
+          echo "🌐 Checking network setup..."
+          podman network ls
+          echo "🐳 Active containers:"
+          podman ps -a
+
+      # Step 8: Stop and clean up containers (always runs)
+      - name: Stop and Clean Up
         if: always()
         working-directory: demo
         run: |
