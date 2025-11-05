@@ -8,71 +8,83 @@ on:
 
 jobs:
   podman-compose:
-    # ⚙️ Use self-hosted runner if you want to connect to your local Podman
-    # runs-on: self-hosted
+    # 👉 Use this for GitHub-hosted runners
     runs-on: ubuntu-latest
+    # 👉 Uncomment this if you’re testing on your local Podman host
+    # runs-on: self-hosted
 
     steps:
-      # Step 1: Checkout the repository
+      # Step 1: Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Install Podman and podman-compose
-      - name: Install Podman and podman-compose
+      # Step 2: Free up disk space on GitHub runner
+      - name: Free up disk space
+        run: |
+          echo "🧹 Cleaning up disk space..."
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
+          sudo apt-get clean
+          df -h
+
+      # Step 3: Install Podman and podman-compose
+      - name: Install Podman
         run: |
           sudo apt-get update -y
           sudo apt-get install -y podman python3-pip
           pip install podman-compose
-
-      # Step 3: Verify installation
-      - name: Verify Podman installation
-        run: |
-          echo "🔍 Checking Podman versions..."
           podman --version
           podman-compose --version
 
-      # Step 4: Create external network if missing
-      - name: Ensure external network exists
+      # Step 4: Configure Podman storage to use a larger path
+      - name: Configure Podman storage
+        run: |
+          echo "⚙️ Reconfiguring Podman storage to use /home/runner/work/_containers"
+          sudo mkdir -p /home/runner/work/_containers
+          sudo bash -c 'echo "graphroot=\"/home/runner/work/_containers\"" >> /etc/containers/storage.conf'
+          df -h
+
+      # Step 5: Ensure Podman network exists
+      - name: Ensure network exists
         run: |
           NETWORK_NAME="anomaly-network"
           if ! podman network exists "$NETWORK_NAME"; then
-            echo "🔧 Creating Podman network: $NETWORK_NAME"
+            echo "🔧 Creating network $NETWORK_NAME"
             podman network create "$NETWORK_NAME"
           else
             echo "✅ Network $NETWORK_NAME already exists"
           fi
 
-      # Step 5: Build Podman images
+      # Step 6: Build Podman images
       - name: Build Podman images
         working-directory: demo
         run: |
-          echo "🔧 Building container images..."
+          echo "🔧 Building images..."
           podman-compose -f docker-compose.yaml build
-          echo "✅ Build completed successfully."
+          echo "✅ Build completed."
 
-      # Step 6: Run containers
+      # Step 7: Run containers
       - name: Run Podman Compose
         working-directory: demo
         run: |
           echo "🚀 Starting containers..."
           podman-compose -f docker-compose.yaml up -d
           echo "✅ Containers started."
-          echo "📋 Listing running containers..."
+          echo "📋 Running containers:"
           podman ps
 
-      # Step 7: Verify network and containers
+      # Step 8: Verify network and container health
       - name: Verify Podman environment
         run: |
-          echo "🌐 Checking network setup..."
+          echo "🌐 Networks:"
           podman network ls
-          echo "🐳 Active containers:"
+          echo "🐳 Containers:"
           podman ps -a
 
-      # Step 8: Stop and clean up containers (always runs)
+      # Step 9: Stop and clean up containers (always runs)
       - name: Stop and Clean Up
         if: always()
         working-directory: demo
         run: |
-          echo "🧹 Cleaning up containers..."
+          echo "🧹 Cleaning up..."
           podman-compose -f docker-compose.yaml down
           echo "✅ Cleanup completed."
