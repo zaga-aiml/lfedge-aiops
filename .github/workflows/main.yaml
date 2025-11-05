@@ -27,7 +27,18 @@ jobs:
           podman --version
           podman-compose --version
 
-      # Step 4: Build images before running
+      # Step 4: Create external network if missing
+      - name: Ensure external network exists
+        run: |
+          NETWORK_NAME="anomaly-network"
+          if ! podman network exists "$NETWORK_NAME"; then
+            echo "🔧 Creating Podman network: $NETWORK_NAME"
+            podman network create "$NETWORK_NAME"
+          else
+            echo "✅ Network $NETWORK_NAME already exists"
+          fi
+
+      # Step 5: Build Podman images
       - name: Build Podman images
         working-directory: demo
         run: |
@@ -35,7 +46,7 @@ jobs:
           podman-compose -f docker-compose.yaml build
           echo "✅ Build completed."
 
-      # Step 5: Run containers
+      # Step 6: Run containers
       - name: Run Podman Compose
         working-directory: demo
         run: |
@@ -44,7 +55,7 @@ jobs:
           echo "✅ Containers started."
           podman ps
 
-      # Step 6: Stop and clean up containers
+      # Step 7: Stop and clean up containers
       - name: Stop Podman Compose
         if: always()
         working-directory: demo
