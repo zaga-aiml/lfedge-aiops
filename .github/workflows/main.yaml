@@ -36,9 +36,21 @@ jobs:
         run: |
           echo "Reconfiguring Podman storage to use /home/runner/work/_containers"
           sudo mkdir -p /home/runner/work/_containers
+          sudo mkdir -p /etc/containers
+
+          # If storage.conf doesn't exist, create a minimal one
+          if [ ! -f /etc/containers/storage.conf ]; then
+            echo "Creating new /etc/containers/storage.conf"
+            echo '[storage]' | sudo tee /etc/containers/storage.conf
+          fi
+
+          # Remove any existing graphroot entry and add the new one
           sudo sed -i '/graphroot/d' /etc/containers/storage.conf
           echo 'graphroot="/home/runner/work/_containers"' | sudo tee -a /etc/containers/storage.conf
+
+          echo "✅ Final /etc/containers/storage.conf:"
           cat /etc/containers/storage.conf
+
 
       # Step 5: Ensure Podman network exists
       - name: Ensure network exists
