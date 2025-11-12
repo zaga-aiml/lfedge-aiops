@@ -8,10 +8,8 @@ on:
 
 jobs:
   podman-compose:
-    # 👉 Use this for GitHub-hosted runners
+    #  Use this for GitHub-hosted runners
     runs-on: ubuntu-latest
-    # 👉 Uncomment this if you’re testing on your local Podman host
-    # runs-on: self-hosted
 
     steps:
       # Step 1: Checkout repository
@@ -21,7 +19,7 @@ jobs:
       # Step 2: Free up disk space on GitHub runner
       - name: Free up disk space
         run: |
-          echo "🧹 Cleaning up disk space..."
+          echo " Cleaning up disk space..."
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
           sudo apt-get clean
           df -h
@@ -38,7 +36,7 @@ jobs:
       # Step 4: Configure Podman storage to use a larger path
       - name: Configure Podman storage
         run: |
-          echo "⚙️ Reconfiguring Podman storage to use /home/runner/work/_containers"
+          echo " Reconfiguring Podman storage to use /home/runner/work/_containers"
           sudo mkdir -p /home/runner/work/_containers
           sudo bash -c 'echo "graphroot=\"/home/runner/work/_containers\"" >> /etc/containers/storage.conf'
           df -h
@@ -48,43 +46,55 @@ jobs:
         run: |
           NETWORK_NAME="anomaly-network"
           if ! podman network exists "$NETWORK_NAME"; then
-            echo "🔧 Creating network $NETWORK_NAME"
+            echo "Creating network $NETWORK_NAME"
             podman network create "$NETWORK_NAME"
           else
-            echo "✅ Network $NETWORK_NAME already exists"
+            echo "Network $NETWORK_NAME already exists"
           fi
 
       # Step 6: Build Podman images
       - name: Build Podman images
         working-directory: demo
         run: |
-          echo "🔧 Building images..."
+          echo " Building images..."
           podman-compose -f docker-compose.yaml build
-          echo "✅ Build completed."
+          echo " Build completed."
 
       # Step 7: Run containers
       - name: Run Podman Compose
         working-directory: demo
         run: |
-          echo "🚀 Starting containers..."
+          echo " Starting containers..."
           podman-compose -f docker-compose.yaml up -d
-          echo "✅ Containers started."
-          echo "📋 Running containers:"
+          echo " Containers started."
+          echo " Running containers:"
           podman ps
 
       # Step 8: Verify network and container health
       - name: Verify Podman environment
         run: |
-          echo "🌐 Networks:"
+          echo " Networks:"
           podman network ls
-          echo "🐳 Containers:"
+          echo " Containers:"
           podman ps -a
 
-      # Step 9: Stop and clean up containers (always runs)
+     # ✅ Step 9: Show container logs
+      - name: Show Container Logs
+        working-directory: demo
+        run: |
+          echo "Fetching logs from running containers..."
+          podman ps --format "{{.Names}}" | while read -r container; do
+            echo "------------------------------------------"
+            echo " Logs for container: $container"
+            echo "------------------------------------------"
+            podman logs "$container" || echo "No logs available for $container"
+          done
+
+      # Step 10: Stop and clean up containers (always runs)
       - name: Stop and Clean Up
         if: always()
         working-directory: demo
         run: |
-          echo "🧹 Cleaning up..."
+          echo "Cleaning up..."
           podman-compose -f docker-compose.yaml down
-          echo "✅ Cleanup completed."
+          echo "Cleanup completed."
