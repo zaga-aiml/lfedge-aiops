@@ -1,4 +1,5 @@
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+from langchain_community.vectorstores import FAISS
 
 from langchain.vectorstores import FAISS
 from langchain.embeddings import HuggingFaceEmbeddings
