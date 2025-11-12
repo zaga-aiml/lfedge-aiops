@@ -4,6 +4,7 @@ uvicorn[standard]==0.27.1
 
 # RAG pipeline and embeddings
 langchain==0.1.10
+langchain-community==0.0.20
 faiss-cpu==1.7.4
 sentence-transformers==2.2.2
 transformers==4.37.0
